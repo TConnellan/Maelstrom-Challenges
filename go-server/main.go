@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"time"
 	//"encoding/json"
@@ -11,7 +12,8 @@ import (
 
 func main() {
 
-	current_max := 0
+	rand.Seed(time.Now().UTC().UnixNano())
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		var body map[string]any
@@ -19,7 +21,7 @@ func main() {
 		//body["ids"] = [100]int{current_max +1,...,current_max + 100}
 		//i := current_max + 1
 
-		body["ids"] = get_ids(&current_max)
+		body["ids"] = get_ids(100)
 		//body["ids"] = []int{1, 2, 3, 4, 5}
 		data, err := json.Marshal(body)
 		if err != nil {
@@ -27,20 +29,17 @@ func main() {
 		} else {
 			fmt.Fprintf(w, fmt.Sprintf("%s", data))
 		}
-
-		current_max = current_max + 100
 	})
 	fmt.Println("Running go-server on port 8080")
 	go doFancyWords()
 	go log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-func get_ids(current_max *int) []int {
-	x := make([]int, 100)
+func get_ids(amount int) []int {
+	x := make([]int, amount)
 
-	for pos := range x {
-		(*current_max)++
-		x[pos] = *current_max
+	for idx := range x {
+		x[idx] = rand.Int()
 	}
 
 	return x
