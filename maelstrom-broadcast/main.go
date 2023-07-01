@@ -2,9 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
-	"os"
 	"strconv"
 
 	maelstrom "github.com/jepsen-io/maelstrom/demo/go"
@@ -38,12 +36,16 @@ func main() {
 	bcn.messagesSeen = make(map[string]bool)
 
 	bcn.node.Handle("broadcast", func(msg maelstrom.Message) error {
-		var body map[string]string
+
 		var broadcast Broadcast
 		if err := json.Unmarshal(msg.Body, &broadcast); err != nil {
 			return err
 		}
-		fmt.Fprintf(os.Stderr, "here1\n")
+
+		var body map[string]any
+		body = make(map[string]any)
+		body["type"] = "broadcast"
+		body["message"] = broadcast.Message
 		if _, seen := bcn.messagesSeen[strconv.Itoa(broadcast.Message)]; !seen {
 			bcn.messagesSeen[strconv.Itoa(broadcast.Message)] = true
 			for _, dest := range bcn.topology[bcn.node.ID()] {
@@ -51,10 +53,15 @@ func main() {
 			}
 		}
 
-		body = make(map[string]string)
+		//body = make(map[string]string)
 		body["type"] = "broadcast_ok"
+		delete(body, "message")
 
 		return bcn.node.Reply(msg, body)
+	})
+
+	bcn.node.Handle("broadcast_ok", func(msg maelstrom.Message) error {
+		return nil
 	})
 
 	bcn.node.Handle("topology", func(msg maelstrom.Message) error {
